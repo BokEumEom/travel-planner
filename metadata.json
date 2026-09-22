@@ -1,0 +1,6 @@
+{
+  "name": "Travel Planner",
+  "description": "A collaborative map-integrated travel itinerary planner with multi-day route visualization, waypoints, and CRDT real-time sync.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
