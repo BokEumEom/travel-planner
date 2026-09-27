@@ -7,6 +7,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Trip, DayPlan, Waypoint, Collaborator } from './types';
 import { INITIAL_TRIP, PRESET_TRIPS } from './data/initialTrip';
 import { CRDTEngine } from './lib/crdt';
+import {
+  loadInitialStorageState,
+  autoSaveItineraries,
+  flushSyncStorage,
+  subscribeSaveStatus,
+} from './services/storageService';
 import { TopNavbar } from './components/TopNavbar';
 import { PlanningSidebar } from './components/PlanningSidebar';
 import { MapView } from './components/MapView';
@@ -17,14 +23,28 @@ import { PhotoGalleryModal } from './components/PhotoGalleryModal';
 import { CRDTInfoModal } from './components/CRDTInfoModal';
 import { CollaboratorSplitView } from './components/CollaboratorSplitView';
 import { HelpGuideModal } from './components/HelpGuideModal';
+import { NewTripModal } from './components/NewTripModal';
 import { Map, List, Layers, Plus } from 'lucide-react';
 
 export default function App() {
-  // Initialize CRDT Engine
+  // Hydrate initial state synchronously from browser storage (LocalStorage + IndexedDB)
+  const initialStorage = useMemo(() => loadInitialStorageState(), []);
+
+  // Initialize CRDT Engine & states with persisted data
   const crdtEngineRef = useRef<CRDTEngine | null>(null);
-  const [trip, setTrip] = useState<Trip>(INITIAL_TRIP);
+  const [trip, setTrip] = useState<Trip>(initialStorage.activeTrip);
+  const [customTrips, setCustomTrips] = useState<Trip[]>(initialStorage.customTrips);
+  const [savedTripsMap, setSavedTripsMap] = useState<Record<string, Trip>>(initialStorage.savedTripsMap);
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'idle'>('saved');
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(initialStorage.lastSavedAt);
   const [activePeers, setActivePeers] = useState<Collaborator[]>([]);
   const [crdtOpCount, setCrdtOpCount] = useState<number>(0);
+
+  const customTripsRef = useRef(customTrips);
+  customTripsRef.current = customTrips;
+
+  const savedTripsMapRef = useRef(savedTripsMap);
+  savedTripsMapRef.current = savedTripsMap;
 
   // Modal states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -34,6 +54,17 @@ export default function App() {
   const [isCRDTInfoOpen, setIsCRDTInfoOpen] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isNewTripOpen, setIsNewTripOpen] = useState(false);
+
+  // Combined available trips:
+  // - Custom trips created by user
+  // - Preset trips (with any user saved modifications applied from savedTripsMap)
+  const availableTrips = useMemo(() => {
+    const mappedPresets = PRESET_TRIPS.map((preset) => {
+      return savedTripsMap[preset.id] || preset;
+    });
+    return [...customTrips, ...mappedPresets];
+  }, [customTrips, savedTripsMap]);
 
   // Map interaction states
   const [isMapClickMode, setIsMapClickMode] = useState(false);
@@ -43,15 +74,18 @@ export default function App() {
   // Mobile layout state ('planner' or 'map')
   const [mobileTab, setMobileTab] = useState<'planner' | 'map'>('planner');
 
-  // Initialize engine once
+  // Initialize engine once with persisted active trip
   useEffect(() => {
-    const engine = new CRDTEngine(INITIAL_TRIP, 'You (Host)', '#10B981');
+    const engine = new CRDTEngine(initialStorage.activeTrip, 'You (Host)', '#10B981');
     crdtEngineRef.current = engine;
     setTrip(engine.getTrip());
 
     const unsubscribe = engine.subscribe((updatedTrip) => {
-      setTrip({ ...updatedTrip });
+      const cloned = { ...updatedTrip };
+      setTrip(cloned);
       setCrdtOpCount(engine.getOperationsCount());
+      // Persist automatically on CRDT updates
+      autoSaveItineraries(cloned, customTripsRef.current, savedTripsMapRef.current);
     });
 
     const unsubscribePeers = engine.subscribePeers((peers) => {
@@ -63,7 +97,22 @@ export default function App() {
       unsubscribePeers();
       engine.destroy();
     };
+  }, [initialStorage.activeTrip]);
+
+  // Subscribe to storage save status for instant user feedback
+  useEffect(() => {
+    const unsub = subscribeSaveStatus(({ status, lastSavedAt: ts }) => {
+      setSaveStatus(status);
+      if (ts) setLastSavedAt(ts);
+    });
+    return unsub;
   }, []);
+
+  // Automatic persistence whenever trip, customTrips, or savedTripsMap changes
+  useEffect(() => {
+    if (!crdtEngineRef.current) return;
+    autoSaveItineraries(trip, customTrips, savedTripsMap);
+  }, [trip, customTrips, savedTripsMap]);
 
   // Active day object
   const activeDay: DayPlan = useMemo(() => {
@@ -122,12 +171,28 @@ export default function App() {
     setSelectedWaypointId(null);
   };
 
-  const handleAddNewDay = (dateString: string) => {
+  const handleAddNewDay = (dateString?: string) => {
+    const lastDay = trip.days[trip.days.length - 1];
+    let nextDate = dateString;
+    if (!nextDate) {
+      if (lastDay?.date) {
+        const d = new Date(lastDay.date);
+        if (!isNaN(d.getTime())) {
+          d.setDate(d.getDate() + 1);
+          nextDate = d.toISOString().split('T')[0];
+        }
+      }
+      if (!nextDate) {
+        nextDate = new Date().toISOString().split('T')[0];
+      }
+    }
+
+    const nextDayNum = trip.days.length + 1;
     const newDay: DayPlan = {
       id: 'day-' + Date.now().toString(36),
-      date: dateString,
-      dayNumber: trip.days.length + 1,
-      title: 'Exploration & Free Day',
+      date: nextDate,
+      dayNumber: nextDayNum,
+      title: `Day ${nextDayNum} - Itinerary`,
       origin: { ...activeDay.origin },
       tags: ['Sightseeing'],
       notes: 'New day plan added to itinerary.',
@@ -142,14 +207,77 @@ export default function App() {
     });
   };
 
+  const handleDeleteDay = (dayId: string) => {
+    if (trip.days.length <= 1) return;
+    const remainingDays = trip.days.filter((d) => d.id !== dayId);
+    // Re-index day numbers cleanly
+    const reindexed = remainingDays.map((d, index) => ({
+      ...d,
+      dayNumber: index + 1,
+    }));
+    const nextActiveDayId = trip.activeDayId === dayId ? reindexed[0].id : trip.activeDayId;
+    crdtEngineRef.current?.applyLocalOperation('FULL_STATE_SYNC', {
+      ...trip,
+      days: reindexed,
+      activeDayId: nextActiveDayId,
+    });
+  };
+
+  const handleCreateTrip = (newTrip: Trip) => {
+    const updatedCustom = [newTrip, ...customTrips];
+    const updatedMap = {
+      ...savedTripsMap,
+      [trip.id]: trip,
+      [newTrip.id]: newTrip,
+    };
+    setCustomTrips(updatedCustom);
+    setSavedTripsMap(updatedMap);
+    crdtEngineRef.current?.setTrip(newTrip);
+    flushSyncStorage(newTrip, updatedCustom, updatedMap);
+    setIsNewTripOpen(false);
+  };
+
   const handleResetTrip = () => {
-    crdtEngineRef.current?.setTrip(INITIAL_TRIP);
+    const originalPreset = PRESET_TRIPS.find((t) => t.id === trip.id) || INITIAL_TRIP;
+    const cleanTrip: Trip = JSON.parse(JSON.stringify(originalPreset));
+
+    const updatedMap = { ...savedTripsMap };
+    delete updatedMap[trip.id];
+    setSavedTripsMap(updatedMap);
+
+    crdtEngineRef.current?.setTrip(cleanTrip);
+    flushSyncStorage(cleanTrip, customTrips, updatedMap);
   };
 
   const handleSelectTripPreset = (presetId: string) => {
-    const selected = PRESET_TRIPS.find((t) => t.id === presetId);
+    // Preserve current trip state in savedTripsMap before switching
+    const updatedMap = {
+      ...savedTripsMap,
+      [trip.id]: trip,
+    };
+    setSavedTripsMap(updatedMap);
+
+    const selected = updatedMap[presetId] || availableTrips.find((t) => t.id === presetId);
     if (selected) {
       crdtEngineRef.current?.setTrip(selected);
+      flushSyncStorage(selected, customTrips, updatedMap);
+    }
+  };
+
+  const handleDeleteCustomTrip = (tripId: string) => {
+    const updatedCustom = customTrips.filter((t) => t.id !== tripId);
+    const updatedMap = { ...savedTripsMap };
+    delete updatedMap[tripId];
+    setCustomTrips(updatedCustom);
+    setSavedTripsMap(updatedMap);
+
+    // If active trip is the one deleted, fallback to first available trip
+    if (trip.id === tripId) {
+      const fallback = updatedCustom[0] || PRESET_TRIPS[0];
+      crdtEngineRef.current?.setTrip(fallback);
+      flushSyncStorage(fallback, updatedCustom, updatedMap);
+    } else {
+      flushSyncStorage(trip, updatedCustom, updatedMap);
     }
   };
 
@@ -188,11 +316,15 @@ export default function App() {
         onExportMarkdown={() => setIsExportOpen(true)}
         onOpenPhotos={() => setIsPhotosOpen(true)}
         onOpenHelp={() => setIsHelpOpen(true)}
+        onOpenNewTripModal={() => setIsNewTripOpen(true)}
         onResetTrip={handleResetTrip}
         onSelectTripPreset={handleSelectTripPreset}
-        availableTrips={PRESET_TRIPS}
+        onDeleteCustomTrip={handleDeleteCustomTrip}
+        availableTrips={availableTrips}
         crdtOpCount={crdtOpCount}
         activePeersCount={activePeers.length + 1}
+        saveStatus={saveStatus}
+        lastSavedAt={lastSavedAt}
       />
 
       {/* 2. Main Content Split View (Desktop: Left Panel + Right Map) */}
@@ -219,6 +351,8 @@ export default function App() {
             onOpenAddWaypoint={() => setIsAddWaypointOpen(true)}
             onOpenCalendar={() => setIsCalendarOpen(true)}
             onSelectDay={handleSelectDay}
+            onAddDay={() => handleAddNewDay()}
+            onDeleteDay={handleDeleteDay}
             onSelectWaypointOnMap={handleSelectWaypointOnMap}
             hoveredWaypointId={hoveredWaypointId}
             onHoverWaypoint={setHoveredWaypointId}
@@ -340,6 +474,15 @@ export default function App() {
           opCount={crdtOpCount}
           peers={activePeers}
           trip={trip}
+        />
+      )}
+
+      {/* New Trip Creation Modal */}
+      {isNewTripOpen && (
+        <NewTripModal
+          isOpen={isNewTripOpen}
+          onClose={() => setIsNewTripOpen(false)}
+          onCreateTrip={handleCreateTrip}
         />
       )}
 

@@ -11,10 +11,12 @@ import {
   MapPin, 
   Layers,
   X,
-  Navigation
+  Navigation,
+  Globe
 } from 'lucide-react';
 import { Waypoint, Origin, WeatherData } from '../types';
 import { fetchWeatherForLocation } from '../services/weatherService';
+import { useI18n } from '../lib/i18n';
 
 interface MapViewProps {
   tripId?: string;
@@ -43,11 +45,17 @@ export const MapView: React.FC<MapViewProps> = ({
   dayNumber,
   dayTitle,
 }) => {
+  const { t, language, formatDayNumber, translateWeatherDesc } = useI18n();
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const routesLayerRef = useRef<L.LayerGroup | null>(null);
   const markerInstancesRef = useRef<Map<string, L.Marker>>(new Map());
+
+  // Map Tile Style: 'standard' (OSM Standard), 'humanitarian' (OSM Humanitarian/HOT), 'topo' (OpenTopoMap)
+  const [mapStyle, setMapStyle] = useState<'standard' | 'humanitarian' | 'topo'>('standard');
 
   // Weather state
   const [weatherMap, setWeatherMap] = useState<Record<string, WeatherData>>({});
@@ -104,12 +112,6 @@ export const MapView: React.FC<MapViewProps> = ({
       zoomControl: false, // We customize or position zoom control
     });
 
-    // Clean OpenStreetMap standard tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>',
-    }).addTo(map);
-
     // Zoom controls in top right
     L.control.zoom({ position: 'topright' }).addTo(map);
 
@@ -118,11 +120,55 @@ export const MapView: React.FC<MapViewProps> = ({
 
     mapInstanceRef.current = map;
 
+    // Ensure map tiles and dimensions render smoothly
+    const timer1 = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    const timer2 = setTimeout(() => {
+      map.invalidateSize();
+    }, 400);
+
     return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
       map.remove();
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Handle Tile Layer Switching (Standard OSM vs Humanitarian HOT vs OpenTopoMap)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+    }
+
+    let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    let attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    let maxZoom = 19;
+
+    if (mapStyle === 'humanitarian') {
+      tileUrl = 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png';
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>';
+      maxZoom = 19;
+    } else if (mapStyle === 'topo') {
+      tileUrl = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)';
+      maxZoom = 17;
+    }
+
+    const layer = L.tileLayer(tileUrl, {
+      maxZoom,
+      attribution,
+    }).addTo(map);
+
+    tileLayerRef.current = layer;
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 50);
+  }, [mapStyle]);
 
   // Handle map click for adding waypoints
   useEffect(() => {
@@ -566,29 +612,26 @@ export const MapView: React.FC<MapViewProps> = ({
         className={`w-full h-full ${isMapClickMode ? 'cursor-crosshair' : 'cursor-grab'}`} 
       />
 
-      {/* Floating Map Controls: Focus to Day & Weather Toggle */}
+      {/* Floating Map Controls: Focus to Day, Weather Toggle & Map Style */}
       <div className="absolute top-3.5 left-3.5 z-30 flex flex-wrap items-center gap-2">
+        {/* Focus to Day Button */}
         <button
           id="focus-to-day-btn"
           type="button"
           onClick={() => handleFocusToDay(true)}
           className="inline-flex items-center gap-2 px-3.5 py-2 bg-white/95 hover:bg-white text-neutral-800 hover:text-neutral-950 font-semibold text-xs rounded-xl shadow-md hover:shadow-lg border border-neutral-200/90 backdrop-blur-xs transition-all duration-150 active:scale-95 cursor-pointer group"
-          title={
-            dayNumber
-              ? `Pan and zoom map to fit all waypoints for Day ${dayNumber}`
-              : 'Pan and zoom map to fit all waypoints for the active day'
-          }
+          title={t('focusToDayTitle')}
         >
           <Crosshair className="w-4 h-4 text-emerald-600 group-hover:rotate-45 transition-transform duration-300 shrink-0" />
-          <span>Focus to Day</span>
+          <span>{t('focusToDay')}</span>
           {typeof dayNumber === 'number' && (
             <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
-              Day {dayNumber}
+              {formatDayNumber(dayNumber)}
             </span>
           )}
           {waypoints.length > 0 && (
             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-              {waypoints.length} {waypoints.length === 1 ? 'stop' : 'stops'}
+              {waypoints.length}
             </span>
           )}
         </button>
@@ -603,16 +646,40 @@ export const MapView: React.FC<MapViewProps> = ({
               ? 'bg-sky-50 text-sky-900 border-sky-200 shadow-sky-100' 
               : 'bg-white/95 hover:bg-white text-neutral-800 hover:text-neutral-950 border-neutral-200/90'
           }`}
-          title="Toggle OpenWeatherMap weather forecast display"
+          title={t('weatherForecast')}
         >
           <CloudSun className="w-4 h-4 text-sky-600 shrink-0" />
-          <span>Weather</span>
+          <span>{t('weather')}</span>
           {activeWeather && (
             <span className="text-[10px] font-bold bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded">
               {activeWeather.temp}°C
             </span>
           )}
           {isWeatherOpen ? <ChevronUp className="w-3.5 h-3.5 opacity-60" /> : <ChevronDown className="w-3.5 h-3.5 opacity-60" />}
+        </button>
+
+        {/* Map Tile Style Toggle Button (Tourist English vs Native OSM vs Light) */}
+        <button
+          id="map-style-toggle-btn"
+          type="button"
+          onClick={() => {
+            setMapStyle(prev => {
+              if (prev === 'standard') return 'humanitarian';
+              if (prev === 'humanitarian') return 'topo';
+              return 'standard';
+            });
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl shadow-md border bg-white/95 hover:bg-white text-neutral-800 border-neutral-200/90 transition-all cursor-pointer"
+          title={`${t('mapTileStyle')} (클릭 시 OSM 표준 / 인도주의 / 지형도 스타일 순환)`}
+        >
+          <Globe className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <span>
+            {mapStyle === 'standard' 
+              ? t('mapStyleStandard') 
+              : mapStyle === 'humanitarian' 
+              ? t('mapStyleHot') 
+              : t('mapStyleTopo')}
+          </span>
         </button>
       </div>
 
@@ -626,10 +693,10 @@ export const MapView: React.FC<MapViewProps> = ({
           <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
             <div className="flex items-center gap-1.5">
               <CloudSun className="w-4 h-4 text-sky-600" />
-              <span className="font-bold text-xs text-neutral-900">Weather Forecast</span>
+              <span className="font-bold text-xs text-neutral-900">{t('weatherForecast')}</span>
               {typeof dayNumber === 'number' && (
                 <span className="text-[10px] font-semibold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
-                  Day {dayNumber}
+                  {formatDayNumber(dayNumber)}
                 </span>
               )}
             </div>
@@ -645,13 +712,13 @@ export const MapView: React.FC<MapViewProps> = ({
                 title="Toggle temperature badges directly on the map pins"
               >
                 <Layers className="w-3 h-3" />
-                <span>Pins: {showMarkerWeatherBadges ? 'On' : 'Off'}</span>
+                <span>{t('pinsBadgeToggle')}: {showMarkerWeatherBadges ? 'ON' : 'OFF'}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setIsWeatherOpen(false)}
                 className="p-1 text-neutral-400 hover:text-neutral-700 rounded-md hover:bg-neutral-100 transition-colors"
-                title="Close weather panel"
+                title={t('close')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -672,7 +739,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                <span>Origin</span>
+                <span>{t('originCity')}</span>
                 {weatherMap['origin'] && (
                   <span className={`text-[10px] font-bold ${selectedWeatherKey === 'origin' ? 'text-neutral-300' : 'text-neutral-500'}`}>
                     {weatherMap['origin'].temp}°C
@@ -722,11 +789,11 @@ export const MapView: React.FC<MapViewProps> = ({
                       {activeWeather.temp}°C
                     </span>
                     <span className="text-xs font-medium text-neutral-600">
-                      Feels like {activeWeather.feelsLike}°C
+                      {t('feelsLike')} {activeWeather.feelsLike}°C
                     </span>
                   </div>
                   <div className="text-xs font-semibold text-sky-700 capitalize mt-0.5">
-                    {activeWeather.description}
+                    {translateWeatherDesc(activeWeather.description)}
                   </div>
                 </div>
 
@@ -749,7 +816,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 <div className="bg-white/80 rounded-lg p-1.5 border border-neutral-100">
                   <div className="flex items-center justify-center gap-1 text-[10px] text-neutral-500">
                     <Droplets className="w-3 h-3 text-sky-500" />
-                    <span>Humidity</span>
+                    <span>{t('humidity')}</span>
                   </div>
                   <div className="text-xs font-bold text-neutral-800 mt-0.5">
                     {activeWeather.humidity}%
@@ -759,7 +826,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 <div className="bg-white/80 rounded-lg p-1.5 border border-neutral-100">
                   <div className="flex items-center justify-center gap-1 text-[10px] text-neutral-500">
                     <Wind className="w-3 h-3 text-teal-500" />
-                    <span>Wind</span>
+                    <span>{t('wind')}</span>
                   </div>
                   <div className="text-xs font-bold text-neutral-800 mt-0.5">
                     {activeWeather.windSpeed} km/h
@@ -769,7 +836,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 <div className="bg-white/80 rounded-lg p-1.5 border border-neutral-100">
                   <div className="flex items-center justify-center gap-1 text-[10px] text-neutral-500">
                     <Thermometer className="w-3 h-3 text-rose-500" />
-                    <span>H / L</span>
+                    <span>{t('hiLo')}</span>
                   </div>
                   <div className="text-xs font-bold text-neutral-800 mt-0.5">
                     {activeWeather.tempMax}° / {activeWeather.tempMin}°
@@ -792,13 +859,13 @@ export const MapView: React.FC<MapViewProps> = ({
                   className="flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                 >
                   <Navigation className="w-3 h-3" />
-                  <span>Pan to Pin</span>
+                  <span>{t('panToPin')}</span>
                 </button>
               </div>
             </div>
           ) : (
             <div className="py-6 text-center text-xs text-neutral-500">
-              {isLoadingWeather ? 'Fetching OpenWeatherMap forecast...' : 'No forecast data available.'}
+              {isLoadingWeather ? t('fetchingWeather') : t('noWeatherData')}
             </div>
           )}
         </div>
@@ -808,7 +875,7 @@ export const MapView: React.FC<MapViewProps> = ({
       {isMapClickMode && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-neutral-900/90 backdrop-blur-sm text-white text-xs px-4 py-2 rounded-full shadow-lg border border-neutral-700 flex items-center gap-2 animate-bounce">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <span>Click anywhere on the map to add a waypoint</span>
+          <span>{t('mapClickModeBanner')}</span>
         </div>
       )}
     </div>

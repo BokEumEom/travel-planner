@@ -10,7 +10,8 @@ import {
   FileDown, 
   Check, 
   MousePointerClick,
-  CloudSun
+  CloudSun,
+  HardDrive
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 
@@ -54,6 +55,12 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose 
       color: 'bg-rose-50 text-rose-700 border-rose-200',
       title: t('guideStep5Title'),
       desc: t('guideStep5Desc'),
+    },
+    {
+      icon: HardDrive,
+      color: 'bg-teal-50 text-teal-700 border-teal-200',
+      title: t('storageInfo'),
+      desc: t('autoSaveNotice'),
     },
   ];
 
@@ -122,7 +129,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose 
           <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-3 text-xs text-emerald-900">
             <MousePointerClick className="w-4 h-4 text-emerald-700 shrink-0" />
             <div className="text-[11px] leading-relaxed">
-              <span className="font-bold">꿀팁:</span> 브라우저의 다른 창이나 탭에서 이 주소를 동시에 열어보세요. 화면이 실시간으로 서로에게 동기화됩니다!
+              <span className="font-bold">Tip:</span> {t('autoSavedTooltip')}
             </div>
           </div>
         </div>

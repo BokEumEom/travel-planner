@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TravelMode } from '../types';
 
-export type Language = 'ko' | 'en';
+export type Language = 'ko' | 'en' | 'ja';
 
 export interface Translations {
   // Top Navbar
@@ -23,6 +23,26 @@ export interface Translations {
   crdtExplainer: string;
   trips: string;
   language: string;
+  createNewTrip: string;
+  newTripModalTitle: string;
+  newTripModalSubtitle: string;
+  destinationCity: string;
+  destinationPlaceholder: string;
+  tripDaysCount: string;
+  startDate: string;
+  createTripBtn: string;
+  popularDestinations: string;
+  addDayTab: string;
+  deleteDayPrompt: string;
+  mapStyleStandard: string;
+  mapStyleHot: string;
+  mapStyleTopo: string;
+  mapTileStyle: string;
+  savedLocally: string;
+  savingChanges: string;
+  autoSaveNotice: string;
+  storageInfo: string;
+  autoSavedTooltip: string;
 
   // Sidebar Header
   dayNumber: string;
@@ -48,6 +68,13 @@ export interface Translations {
   reorderHint: string;
   noWaypointsYet: string;
   addFirstWaypoint: string;
+  emptyDayTitle: string;
+  emptyDaySubtitle: string;
+  addFirstStopBtn: string;
+  attractions: string;
+  cafes: string;
+  food: string;
+  lodging: string;
 
   // Waypoint Card
   save: string;
@@ -195,6 +222,26 @@ const TRANSLATIONS: Record<Language, Translations> = {
     crdtExplainer: '이 앱을 다른 브라우저 탭이나 창에서 열면 실시간 충돌 없이 즉각 동기화됩니다.',
     trips: '여행 목록',
     language: '언어 (Language)',
+    createNewTrip: '새 여행 만들기',
+    newTripModalTitle: '새 여행 일정 만들기',
+    newTripModalSubtitle: '여행지, 시작 날짜, 일수를 정해 나만의 여행 계획을 시작하세요.',
+    destinationCity: '여행지 / 도시',
+    destinationPlaceholder: '예: 도쿄, 파리, 제주도, 뉴욕, 오사카',
+    tripDaysCount: '여행 일수',
+    startDate: '여행 시작일',
+    createTripBtn: '여행 일정 생성',
+    popularDestinations: '인기 여행지 빠른 선택',
+    addDayTab: '+ 일차 추가',
+    deleteDayPrompt: '이 일차를 삭제하시겠습니까?',
+    mapStyleStandard: 'OSM 표준 지도',
+    mapStyleHot: 'OSM 인도주의 지도 (HOT)',
+    mapStyleTopo: 'OSM 지형도 (OpenTopoMap)',
+    mapTileStyle: '지도 스타일',
+    savedLocally: '자동 저장됨',
+    savingChanges: '저장 중...',
+    autoSaveNotice: '일정이 브라우저 저장소에 자동 저장되어 새로고침 후에도 유지됩니다.',
+    storageInfo: '로컬/IndexedDB 자동 저장',
+    autoSavedTooltip: '모든 변경사항이 브라우저 로컬 저장소(IndexedDB/LocalStorage)에 실시간으로 보관됩니다.',
 
     // Sidebar Header
     dayNumber: '{n}일차',
@@ -220,6 +267,13 @@ const TRANSLATIONS: Record<Language, Translations> = {
     reorderHint: '카드를 드래그하거나 화살표를 눌러 방문 순서를 변경할 수 있습니다',
     noWaypointsYet: '이 날에 등록된 경유지가 아직 없습니다.',
     addFirstWaypoint: '+ 첫 번째 경유지 추가하기',
+    emptyDayTitle: '첫 번째 방문 장소를 등록해보세요',
+    emptyDaySubtitle: '관광 명소, 카페, 맛집, 숙소를 등록하여 이 날의 여행 동선을 완성해보세요.',
+    addFirstStopBtn: '첫 경유지 추가하기',
+    attractions: '명소',
+    cafes: '카페',
+    food: '맛집',
+    lodging: '숙소',
 
     // Waypoint Card
     save: '저장',
@@ -365,6 +419,26 @@ const TRANSLATIONS: Record<Language, Translations> = {
     crdtExplainer: 'Opening this app in another browser tab will synchronize edits in real time with zero conflict.',
     trips: 'Trips',
     language: 'Language',
+    createNewTrip: 'Create New Trip',
+    newTripModalTitle: 'Create New Itinerary',
+    newTripModalSubtitle: 'Choose a destination, start date, and days to start planning your custom journey.',
+    destinationCity: 'Destination / City',
+    destinationPlaceholder: 'e.g. Tokyo, Paris, Jeju, New York, Osaka',
+    tripDaysCount: 'Duration (Days)',
+    startDate: 'Start Date',
+    createTripBtn: 'Create Itinerary',
+    popularDestinations: 'Quick Popular Destinations',
+    addDayTab: '+ Add Day',
+    deleteDayPrompt: 'Are you sure you want to delete this day?',
+    mapStyleStandard: 'OSM Standard Map',
+    mapStyleHot: 'OSM Humanitarian Map (HOT)',
+    mapStyleTopo: 'OSM Topographic Map',
+    mapTileStyle: 'Map Style',
+    savedLocally: 'Saved to browser',
+    savingChanges: 'Saving...',
+    autoSaveNotice: 'Itinerary is automatically saved locally and persists on refresh.',
+    storageInfo: 'LocalStorage & IndexedDB Storage',
+    autoSavedTooltip: 'All itinerary edits are automatically saved to your browser storage (LocalStorage/IndexedDB).',
 
     // Sidebar Header
     dayNumber: 'Day {n}',
@@ -390,6 +464,13 @@ const TRANSLATIONS: Record<Language, Translations> = {
     reorderHint: 'Drag cards or use arrows to reorder itinerary sequence',
     noWaypointsYet: 'No stops scheduled for this day yet.',
     addFirstWaypoint: '+ Add first waypoint',
+    emptyDayTitle: 'Add your first stop',
+    emptyDaySubtitle: 'Start mapping out your day by adding attractions, cafes, restaurants, or hotels.',
+    addFirstStopBtn: 'Add your first stop',
+    attractions: 'Attractions',
+    cafes: 'Cafes',
+    food: 'Food',
+    lodging: 'Hotels',
 
     // Waypoint Card
     save: 'Save',
@@ -515,6 +596,233 @@ const TRANSLATIONS: Record<Language, Translations> = {
     guideStep5Desc: 'Open multiple browser tabs or click "Dual Sync" to test real-time conflict-free collaboration. Use the Export button (📥) to copy Markdown for Notion or Obsidian.',
     gotIt: 'Got it',
   },
+  ja: {
+    // Top Navbar
+    presetItineraries: 'おすすめ旅行プラン',
+    resetDefaultTrip: '初期日程に戻す',
+    shareTrip: '日程を共有 / リンクをコピー',
+    linkCopied: 'リンクがコピーされました！',
+    splitView: '同時編集分割',
+    splitViewActive: 'リアルタイム協調中',
+    splitViewDesc: 'CRDT同時協調モード（両画面分割ビュー）',
+    photos: '旅行写真＆名所',
+    exportMarkdown: 'Markdown / Notion出力',
+    crdtStatus: 'CRDT同期状態',
+    crdtLiveActive: 'リアルタイム同期有効',
+    broadcastChannel: 'ブロードキャストチャネル:',
+    conflictResolution: '衝突解決アルゴリズム:',
+    syncedOps: '同期済み操作数:',
+    connectedPeers: '接続ピア数:',
+    crdtExplainer: 'このアプリを別ブラウザタブやウィンドウで開くと、リアルタイムで競合なく即座に同期されます。',
+    trips: '旅行リスト',
+    language: '言語 (Language)',
+    createNewTrip: '新しい旅行を作成',
+    newTripModalTitle: '新しい旅行日程を作成',
+    newTripModalSubtitle: '旅行先、開始日、日数を設定して、あなただけの旅行プランを始めましょう。',
+    destinationCity: '旅行先 / 都市',
+    destinationPlaceholder: '例: 東京、京都、パリ、済州島、ニューヨーク',
+    tripDaysCount: '旅行日数',
+    startDate: '旅行開始日',
+    createTripBtn: '旅行日程を作成',
+    popularDestinations: '人気の旅行先から選ぶ',
+    addDayTab: '+ 日程追加',
+    deleteDayPrompt: 'この日程を削除しますか？',
+    mapStyleStandard: 'OSM標準マップ',
+    mapStyleHot: 'OSM人道支援マップ (HOT)',
+    mapStyleTopo: 'OSM地形図 (OpenTopoMap)',
+    mapTileStyle: 'マップスタイル',
+    savedLocally: 'ブラウザに自動保存済み',
+    savingChanges: '保存中...',
+    autoSaveNotice: '日程はブラウザストレージに自動保存され、リロード後も保持されます。',
+    storageInfo: 'ローカル/IndexedDB自動保存',
+    autoSavedTooltip: 'すべての変更はブラウザストレージ（IndexedDB/LocalStorage）にリアルタイムで安全に保存されます。',
+
+    // Sidebar Header
+    dayNumber: '{n}日目',
+    connected: '接続中',
+    offline: 'オフライン',
+    tripTitleLabel: '旅行タイトル',
+    tripTitlePlaceholder: '旅行タイトルを入力...',
+
+    // Overview Section
+    overview: '概要',
+    origin: '出発地',
+    setOrigin: '出発地を設定',
+    tags: 'タグ',
+    addTag: 'タグ追加',
+
+    // Day Plan
+    dayPlan: '一日の計画',
+    dayPlanPlaceholder: 'この日の観光、散策、グルメ、カフェの計画をメモしましょう...',
+
+    // Waypoints Section
+    waypoints: '経由地リスト',
+    addWaypoint: '追加',
+    reorderHint: 'カードをドラッグまたは矢印ボタンで訪問順序を変更できます',
+    noWaypointsYet: 'この日に登録された経由地はまだありません。',
+    addFirstWaypoint: '+ 最初の経由地を追加',
+    emptyDayTitle: '最初の目的地を追加しましょう',
+    emptyDaySubtitle: '観光名所、カフェ、グルメ、ホテルを登録してこの日のルートを描きましょう。',
+    addFirstStopBtn: '最初の目的地を追加',
+    attractions: '観光名所',
+    cafes: 'カフェ',
+    food: 'グルメ',
+    lodging: 'ホテル',
+
+    // Waypoint Card
+    save: '保存',
+    edit: '編集',
+    delete: '削除',
+    locateOnMap: '地図で位置を確認',
+    moveUp: '上に移動',
+    moveDown: '下に移動',
+    waypointNamePlaceholder: '経由地名',
+    notesPlaceholder: '移動メモや見どころ・ヒント...',
+    transitTime: '移動時間',
+
+    // Travel Modes
+    walk: '徒歩',
+    bus: 'バス',
+    train: '地下鉄/電車',
+    flight: 'フライト',
+    car: '車/タクシー',
+    ferry: 'フェリー/船',
+
+    // Map Controls & Floating Panels
+    focusToDay: '日程に合わせる',
+    focusToDayTitle: '現在の日のすべての経由地が一目で収まるよう地図を自動調整',
+    weather: '天気予報',
+    weatherForecast: '天気予報',
+    pinsBadgeToggle: 'ピン温度',
+    close: '閉じる',
+    originCity: '出発地',
+    feelsLike: '体感',
+    humidity: '湿度',
+    wind: '風速',
+    hiLo: '最高/最低',
+    panToPin: 'ピン位置へ移動',
+    fetchingWeather: 'OpenWeatherMap予報を取得中...',
+    noWeatherData: '天気予報データを取得できませんでした。',
+    mapClickModeBanner: '地図上の任意の場所をクリックして新しい経由地を追加できます',
+    cancel: 'キャンセル',
+
+    // Add Waypoint Modal
+    addWaypointTitle: '新しい経由地を追加',
+    addWaypointSubtitle: '旅行日程に追加する場所の情報を入力するか、おすすめスポットを選択してください。',
+    placeName: 'スポット名',
+    placeNamePlaceholder: '例: 新宿御苑、東京タワー、浅草寺',
+    latitude: '緯度 (Lat)',
+    longitude: '経度 (Lng)',
+    travelModeToNext: '移動手段',
+    estDuration: '予想所要時間',
+    estDurationPlaceholder: '例: 15分、1時間30分',
+    notesTips: 'メモ・見どころ',
+    notesTipsPlaceholder: '例: 事前予約推奨、日没の眺望スポット',
+    quickAddFromMap: '地図から直接クリックして指定',
+    quickAddFromMapDesc: 'モーダルを閉じて地図上をクリックすると自動で座標が入力されます。',
+    recommendedPlaces: 'おすすめ観光スポット',
+    selectCategory: '地域フィルター',
+    cancelBtn: 'キャンセル',
+    addBtn: '経由地を追加',
+
+    // Export Modal
+    exportTitle: 'Markdown日程を出力',
+    exportSubtitle: 'Notion、Obsidian、旅のメモにそのまま貼り付けられる整理されたMarkdownドキュメントです。',
+    exportItinerary: '旅行日程を出力',
+    exportDesc: 'Notionや旅仲間との共有に適したMarkdown形式',
+    copyToClipboard: 'クリップボードにコピー',
+    copyMarkdown: 'クリップボードにコピー',
+    copied: 'コピー完了！',
+    downloadMd: '.mdファイルをダウンロード',
+
+    // Calendar Modal
+    calendarTitle: '日程カレンダー',
+    addNewDay: '新しい日を追加 (+)',
+    addDay: '日を追加',
+    prevMonth: '前月',
+    nextMonth: '次月',
+    plannedDaysCount: '{count}件の日程登録済み',
+    daysList: '登録済み日程',
+    selectDayPrompt: '移動したい日を選択するか、新しい日付を追加してください。',
+
+    // Photos Modal
+    photoGalleryTitle: '旅の写真ギャラリー＆スポット',
+    photoGallerySubtitle: '選択した日の代表的な名所とフォトスポットです。',
+
+    // CRDT Modal
+    crdtModalTitle: 'CRDT同期エンジン',
+    crdtModalSubtitle: '競合のないレプリケーテッド・データタイプ＆ピア・ツー・ピア状態',
+    nodeClientId: 'ノードクライアントID',
+    connectedNodes: '接続中ピア',
+    crdtEngineOverviewTitle: 'ピア・ツー・ピア BroadcastChannel',
+    crdtEngineOverviewDesc: '中央サーバー不要で複数タブやインスタンス間をリアルタイム同期します。',
+    lwwResolutionTitle: 'Last-Write-Wins (LWW) 解決',
+    lwwResolutionDesc: '単調増加タイムスタンプにより、同時変更があっても全ピアが同一状態に収束します。',
+    offlineFirstTitle: 'オフラインファースト設計',
+    offlineFirstDesc: 'オフラインでも自由に編集可能で、再接続時に自動マージされます。',
+
+    // Split Collaborator View
+    collaboratorViewTitle: 'CRDTデュアル共同編集ビュー',
+    collaboratorViewSubtitle: '2つのパネルはそれぞれ独立したピアノードとして動作し、競合なくリアルタイム同期します。',
+    hostEditor: 'あなたのエディタ (ホスト)',
+    peerEditor: '共同編集者エディタ (ピア・シミュレーション)',
+    guestEditor: 'ピア B: アリス (共同編集者)',
+    addTagPrompt: 'タグ追加',
+    simulatePeerActions: 'ピア操作テスト:',
+    testAddTag: 'ピアがタグを追加',
+    testReorder: 'ピアが順序を変更',
+
+    // Footer Navigation
+    prevDay: '{n}日目',
+    nextDay: '{n}日目',
+    dayNavTooltip: '{n}日目 ({date}) へ切り替え',
+
+    // Help Guide Modal
+    helpGuide: '使い方ガイド',
+    helpGuideTitle: 'トラベルプランナー使い方ガイド',
+    helpGuideSubtitle: '地図連動の日程計画とリアルタイム共同作業をマスターしましょう。',
+    guideStep1Title: '1. 旅行の選択＆新規旅行作成',
+    guideStep1Desc: '左上の旅行名をクリックしておすすめプラン（東京・京都、ソウル・済州、シドニー等）を切り替えたり、「+ 新しい旅行を作成」でオリジナル旅行を白紙から作成できます。',
+    guideStep2Title: '2. 日程（Day）管理＆一発地図フィット',
+    guideStep2Desc: 'サイドバー上部の [Day 1][Day 2][+ 日程追加] 탭で日程を自由に追加・切り替えできます。地図上の「日程に合わせる」を押すと、その日の全スポットが一目で収まります。',
+    guideStep3Title: '3. 経由地の登録（サイドバー＆地図クリック）',
+    guideStep3Desc: 'サイドバーの「+ 経由地追加」から移動手段（徒歩、バス、電車等）とともにスポットを登録するか、「地図クリックモード」で地図上を直接クリックしてピンを立てられます。',
+    guideStep4Title: '4. 順序並べ替え＆リアルタイム天気',
+    guideStep4Desc: '経由地カードのドラッグや▲/▼ボタンで順序を入れ替えるとルートが即座に再計算されます。カードをクリックすると地図がジャンプし、天気予報ポップアップが表示されます。',
+    guideStep5Title: '5. リアルタイム協調（CRDT）＆出力',
+    guideStep5Desc: '別ブラウザタブで開くか「同時編集分割」で競合のないリアルタイム同期を試せます。上部の出力（📥）ボタンからNotion用Markdownをワンクリックコピーできます。',
+    gotIt: '理解しました',
+  },
+};
+
+// Weather description dictionary for Japanese
+const WEATHER_JA_MAP: Record<string, string> = {
+  'clear sky': '快晴',
+  'few clouds': '晴れ（雲少なめ）',
+  'scattered clouds': '晴れ時々曇り',
+  'broken clouds': '曇りがち',
+  'overcast clouds': '曇り',
+  'shower rain': 'にわか雨',
+  'light rain': '小雨',
+  'moderate rain': '雨',
+  'heavy intensity rain': '強い雨',
+  'very heavy rain': '大雨',
+  'extreme rain': '豪雨',
+  'freezing rain': '凍雨',
+  'light intensity shower rain': '弱い小雨',
+  'heavy intensity shower rain': '激しいにわか雨',
+  'thunderstorm': '雷雨',
+  'snow': '雪',
+  'light snow': '小雪',
+  'heavy snow': '大雪',
+  'mist': '靄（もや）',
+  'fog': '濃霧',
+  'haze': '煙霧',
+  'clear': '晴れ',
+  'clouds': '曇り',
+  'partly cloudy': '晴れ時々曇り',
+  'mostly cloudy': '概ね曇り',
+  'sunny': '快晴',
 };
 
 // Weather description dictionary for Korean
@@ -583,11 +891,11 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | null>(null);
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Default to Korean as requested by the user ("한국어 지원"), check localStorage
+  // Default to Korean as requested by the user, check localStorage
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('vibetrip_language') as Language;
-      if (saved === 'ko' || saved === 'en') {
+      if (saved === 'ko' || saved === 'en' || saved === 'ja') {
         return saved;
       }
     }
@@ -603,7 +911,9 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === 'ko' ? 'en' : 'ko');
+    if (language === 'ko') setLanguage('en');
+    else if (language === 'en') setLanguage('ja');
+    else setLanguage('ko');
   };
 
   useEffect(() => {
@@ -634,6 +944,13 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
         const dayName = dayNames[d.getDay()];
         return `${year}년 ${month}월 ${day}일 (${dayName})`;
+      } else if (language === 'ja') {
+        const year = d.getFullYear();
+        const month = d.getMonth() + 1;
+        const day = d.getDate();
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+        const dayName = dayNames[d.getDay()];
+        return `${year}年 ${month}月 ${day}日 (${dayName})`;
       } else {
         const options: Intl.DateTimeFormatOptions = {
           weekday: 'short',
@@ -649,19 +966,21 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const formatDayNumber = (dayNum: number): string => {
-    return language === 'ko' ? `${dayNum}일차` : `Day ${dayNum}`;
+    if (language === 'ko') return `${dayNum}일차`;
+    if (language === 'ja') return `${dayNum}日目`;
+    return `Day ${dayNum}`;
   };
 
   const translateTravelMode = (mode: TravelMode): string => {
-    const map: Record<TravelMode, { ko: string; en: string }> = {
-      walk: { ko: '도보', en: 'Walk' },
-      bus: { ko: '버스', en: 'Bus' },
-      train: { ko: '지하철/기차', en: 'Train' },
-      flight: { ko: '항공편', en: 'Flight' },
-      car: { ko: '차량/택시', en: 'Drive' },
-      ferry: { ko: '페리/선박', en: 'Ferry' },
+    const map: Record<TravelMode, { ko: string; en: string; ja: string }> = {
+      walk: { ko: '도보', en: 'Walk', ja: '徒歩' },
+      bus: { ko: '버스', en: 'Bus', ja: 'バス' },
+      train: { ko: '지하철/기차', en: 'Train', ja: '地下鉄/電車' },
+      flight: { ko: '항공편', en: 'Flight', ja: 'フライト' },
+      car: { ko: '차량/택시', en: 'Drive', ja: '車/タクシー' },
+      ferry: { ko: '페리/선박', en: 'Ferry', ja: 'フェリー/船' },
     };
-    return map[mode]?.[language] || mode;
+    return map[mode]?.[language] || map[mode]?.['ko'] || mode;
   };
 
   const translateWeatherDesc = (desc: string): string => {
@@ -669,6 +988,14 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (language === 'en') return desc;
 
     const lower = desc.toLowerCase().trim();
+    if (language === 'ja') {
+      if (WEATHER_JA_MAP[lower]) return WEATHER_JA_MAP[lower];
+      for (const [enKey, jaVal] of Object.entries(WEATHER_JA_MAP)) {
+        if (lower.includes(enKey)) return jaVal;
+      }
+      return desc;
+    }
+
     if (WEATHER_KO_MAP[lower]) {
       return WEATHER_KO_MAP[lower];
     }

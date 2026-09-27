@@ -10,7 +10,13 @@ import {
   GitBranch, 
   ChevronLeft, 
   ChevronRight,
-  Share2
+  Share2,
+  Sparkles,
+  Compass,
+  Coffee,
+  Landmark,
+  UtensilsCrossed,
+  Hotel
 } from 'lucide-react';
 import { DayPlan, Waypoint, Trip } from '../types';
 import { WaypointCard } from './WaypointCard';
@@ -30,6 +36,8 @@ interface PlanningSidebarProps {
   onOpenAddWaypoint: () => void;
   onOpenCalendar: () => void;
   onSelectDay: (dayId: string) => void;
+  onAddDay?: () => void;
+  onDeleteDay?: (dayId: string) => void;
   onSelectWaypointOnMap: (waypoint: Waypoint) => void;
   hoveredWaypointId?: string | null;
   onHoverWaypoint?: (id: string | null) => void;
@@ -52,6 +60,8 @@ export const PlanningSidebar: React.FC<PlanningSidebarProps> = ({
   onOpenAddWaypoint,
   onOpenCalendar,
   onSelectDay,
+  onAddDay,
+  onDeleteDay,
   onSelectWaypointOnMap,
   hoveredWaypointId,
   onHoverWaypoint,
@@ -222,6 +232,70 @@ export const PlanningSidebar: React.FC<PlanningSidebarProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-0.5"></span>
           )}
         </button>
+      </div>
+
+      {/* 1.5. Day Navigation Tabs Strip & Add Day button */}
+      <div 
+        id="sidebar-days-tab-strip"
+        className="px-4 py-2 bg-neutral-50/90 border-b border-neutral-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0"
+      >
+        {trip.days.map((d, idx) => {
+          const isActive = d.id === activeDay.id;
+          return (
+            <div key={d.id} className="relative shrink-0 flex items-center">
+              <button
+                type="button"
+                onClick={() => onSelectDay(d.id)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white hover:bg-neutral-100 text-neutral-600 border border-neutral-200/80'
+                }`}
+                title={t('dayNavTooltip', { n: d.dayNumber || idx + 1, date: d.date })}
+              >
+                <span>{formatDayNumber(d.dayNumber || idx + 1)}</span>
+                {d.waypoints.length > 0 && (
+                  <span
+                    className={`text-[10px] px-1 py-0.2 rounded-full ${
+                      isActive ? 'bg-emerald-700 text-emerald-100' : 'bg-neutral-100 text-neutral-500'
+                    }`}
+                  >
+                    {d.waypoints.length}
+                  </span>
+                )}
+              </button>
+              {onDeleteDay && trip.days.length > 1 && isActive && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (typeof window !== 'undefined' && window.confirm(t('deleteDayPrompt'))) {
+                      onDeleteDay(d.id);
+                    }
+                  }}
+                  className="ml-1 p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                  title={t('delete')}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Quick Add Day Button */}
+        {onAddDay && (
+          <button
+            id="sidebar-add-day-btn"
+            type="button"
+            onClick={onAddDay}
+            className="px-2.5 py-1.5 text-xs font-bold rounded-lg shrink-0 transition-all cursor-pointer bg-white hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-dashed border-emerald-300 hover:border-emerald-500 flex items-center gap-1 active:scale-95 shadow-2xs"
+            title={t('addNewDay')}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>{t('addDayTab')}</span>
+          </button>
+        )}
       </div>
 
       {/* Scrollable Planning Content */}
@@ -411,14 +485,108 @@ export const PlanningSidebar: React.FC<PlanningSidebarProps> = ({
             ))}
 
             {activeDay.waypoints.length === 0 && (
-              <div className="text-center py-6 px-4 bg-neutral-50/50 border border-dashed border-neutral-200 rounded-xl">
-                <p className="text-xs text-neutral-400">{t('noWaypointsYet')}</p>
-                <button
-                  onClick={onOpenAddWaypoint}
-                  className="mt-2 text-xs font-semibold text-emerald-600 hover:underline"
-                >
-                  {t('addFirstWaypoint')}
-                </button>
+              <div
+                id="empty-day-state"
+                className="relative overflow-hidden rounded-2xl border border-dashed border-emerald-200/90 bg-linear-to-b from-emerald-50/40 via-white to-amber-50/30 p-6 text-center shadow-xs transition-all"
+              >
+                {/* Decorative background glow dots */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-emerald-200/40 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-amber-200/40 rounded-full blur-xl pointer-events-none" />
+
+                {/* Friendly Illustration Container */}
+                <div className="relative mx-auto mb-4 flex items-center justify-center w-28 h-28 select-none">
+                  {/* Outer circle with soft warm gradient */}
+                  <div className="absolute inset-0 rounded-full bg-linear-to-tr from-emerald-100/70 via-teal-50 to-amber-100/60 border border-emerald-200/60 shadow-inner" />
+                  
+                  {/* Subtle map route trajectory SVG */}
+                  <svg
+                    className="absolute inset-0 w-full h-full text-emerald-400/60"
+                    viewBox="0 0 112 112"
+                    fill="none"
+                  >
+                    <path
+                      d="M24 78 C35 55, 50 70, 65 42 C72 30, 85 45, 88 34"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeDasharray="4 4"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="24" cy="78" r="3.5" fill="#10B981" />
+                    <circle cx="88" cy="34" r="3.5" fill="#F59E0B" />
+                  </svg>
+
+                  {/* Main Central Pin Card with gentle floating bounce */}
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-white shadow-md border border-emerald-100 flex items-center justify-center transform -rotate-3 hover:rotate-0 transition-transform">
+                    <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-xs">
+                      <MapPin className="w-5 h-5 animate-bounce [animation-duration:2.5s]" />
+                    </div>
+                  </div>
+
+                  {/* Floating category icons */}
+                  <div className="absolute top-1 -right-1 z-20 w-7 h-7 rounded-full bg-amber-50 border border-amber-200 shadow-xs flex items-center justify-center text-amber-600 animate-pulse">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="absolute -bottom-1 -left-1 z-20 w-7 h-7 rounded-full bg-blue-50 border border-blue-200 shadow-xs flex items-center justify-center text-blue-600">
+                    <Compass className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Friendly Typography */}
+                <h4 className="text-sm font-bold text-neutral-800 tracking-tight">
+                  {t('emptyDayTitle')}
+                </h4>
+                <p className="mt-1.5 text-xs text-neutral-500 leading-relaxed max-w-[280px] mx-auto">
+                  {t('emptyDaySubtitle')}
+                </p>
+
+                {/* Primary 'Add your first stop' CTA Button */}
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <button
+                    id="empty-day-add-stop-btn"
+                    type="button"
+                    onClick={onOpenAddWaypoint}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer group"
+                  >
+                    <Plus className="w-4 h-4 transition-transform group-hover:rotate-90 duration-200" />
+                    <span>{t('addFirstStopBtn')}</span>
+                  </button>
+
+                  {/* Quick Category Inspiration Chips */}
+                  <div className="mt-2 flex items-center justify-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={onOpenAddWaypoint}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 hover:bg-emerald-50 text-[11px] font-medium text-neutral-600 hover:text-emerald-700 border border-neutral-200/80 transition-colors shadow-2xs cursor-pointer"
+                    >
+                      <Landmark className="w-3 h-3 text-amber-500" />
+                      <span>{t('attractions')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onOpenAddWaypoint}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 hover:bg-emerald-50 text-[11px] font-medium text-neutral-600 hover:text-emerald-700 border border-neutral-200/80 transition-colors shadow-2xs cursor-pointer"
+                    >
+                      <Coffee className="w-3 h-3 text-amber-700" />
+                      <span>{t('cafes')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onOpenAddWaypoint}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 hover:bg-emerald-50 text-[11px] font-medium text-neutral-600 hover:text-emerald-700 border border-neutral-200/80 transition-colors shadow-2xs cursor-pointer"
+                    >
+                      <UtensilsCrossed className="w-3 h-3 text-rose-500" />
+                      <span>{t('food')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onOpenAddWaypoint}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 hover:bg-emerald-50 text-[11px] font-medium text-neutral-600 hover:text-emerald-700 border border-neutral-200/80 transition-colors shadow-2xs cursor-pointer"
+                    >
+                      <Hotel className="w-3 h-3 text-blue-500" />
+                      <span>{t('lodging')}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
